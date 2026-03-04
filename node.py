@@ -219,7 +219,6 @@ def main():
         node_state["known_nodes"].append(9031)
         node_state["known_nodes"].append(9030)
 
-
     if this_port == 9021:
         node_state["known_nodes"].append(9010)
         node_state["known_nodes"].append(9011)
@@ -230,9 +229,108 @@ def main():
         node_state["known_nodes"].append(9031)
         node_state["known_nodes"].append(9030)
 
-    if this_port == 9013:
-       node_state["known_nodes"].append(9002)
+    if this_port == 9022:
+        node_state["known_nodes"].append(9011)
+        node_state["known_nodes"].append(9012)
+        node_state["known_nodes"].append(9013)
+        node_state["known_nodes"].append(9021)
+        node_state["known_nodes"].append(9023)
+        node_state["known_nodes"].append(9033)
+        node_state["known_nodes"].append(9031)
+        node_state["known_nodes"].append(9032)
+        node_state["known_nodes"].append(9033)
 
+    if this_port == 9023:
+        node_state["known_nodes"].append(9012)
+        node_state["known_nodes"].append(9013)
+        node_state["known_nodes"].append(9014)
+        node_state["known_nodes"].append(9022)
+        node_state["known_nodes"].append(9024)
+        node_state["known_nodes"].append(9034)
+        node_state["known_nodes"].append(9032)
+        node_state["known_nodes"].append(9033)
+        
+    if this_port == 9024:
+        node_state["known_nodes"].append(9013)
+        node_state["known_nodes"].append(9014)
+        node_state["known_nodes"].append(9023)
+        node_state["known_nodes"].append(9033)
+        node_state["known_nodes"].append(9034)
+
+    if this_port == 9030:
+        node_state["known_nodes"].append(9020)
+        node_state["known_nodes"].append(9021)
+        node_state["known_nodes"].append(9031)
+        node_state["known_nodes"].append(9041)
+        node_state["known_nodes"].append(9040)
+
+    if this_port == 9031:
+        node_state["known_nodes"].append(9020)
+        node_state["known_nodes"].append(9021)
+        node_state["known_nodes"].append(9022)
+        node_state["known_nodes"].append(9030)
+        node_state["known_nodes"].append(9032)
+        node_state["known_nodes"].append(9041)
+        node_state["known_nodes"].append(9040)
+        node_state["known_nodes"].append(9042)
+
+    if this_port == 9032:
+        node_state["known_nodes"].append(9021)
+        node_state["known_nodes"].append(9022)
+        node_state["known_nodes"].append(9023)
+        node_state["known_nodes"].append(9031)
+        node_state["known_nodes"].append(9033)
+        node_state["known_nodes"].append(9042)
+        node_state["known_nodes"].append(9041)
+        node_state["known_nodes"].append(9043)
+
+    if this_port == 9033:
+        node_state["known_nodes"].append(9022)
+        node_state["known_nodes"].append(9023)
+        node_state["known_nodes"].append(9024)
+        node_state["known_nodes"].append(9032)
+        node_state["known_nodes"].append(9034)
+        node_state["known_nodes"].append(9043)
+        node_state["known_nodes"].append(9044)
+        node_state["known_nodes"].append(9042)
+
+    if this_port == 9034:
+        node_state["known_nodes"].append(9023)
+        node_state["known_nodes"].append(9024)
+        node_state["known_nodes"].append(9033)
+        node_state["known_nodes"].append(9043)
+        node_state["known_nodes"].append(9044)
+
+    if this_port == 9040:
+        node_state["known_nodes"].append(9030)
+        node_state["known_nodes"].append(9031)
+        node_state["known_nodes"].append(9041)
+
+    if this_port == 9041:
+        node_state["known_nodes"].append(9030)
+        node_state["known_nodes"].append(9031)
+        node_state["known_nodes"].append(9032)
+        node_state["known_nodes"].append(9040)
+        node_state["known_nodes"].append(9042)
+
+    if this_port == 9042:
+        node_state["known_nodes"].append(9031)
+        node_state["known_nodes"].append(9032)
+        node_state["known_nodes"].append(9033)
+        node_state["known_nodes"].append(9041)
+        node_state["known_nodes"].append(9043)
+
+    if this_port == 9043:
+        node_state["known_nodes"].append(9032)
+        node_state["known_nodes"].append(9033)
+        node_state["known_nodes"].append(9034)
+        node_state["known_nodes"].append(9042)
+        node_state["known_nodes"].append(9044)
+
+    if this_port == 9044:
+        node_state["known_nodes"].append(9033)
+        node_state["known_nodes"].append(9034)
+        node_state["known_nodes"].append(9043)
 
     # Add a latency matrix to the initial state
     # Latency matrix represents latency in seconds between a pair of nodes
