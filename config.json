@@ -10,6 +10,7 @@
     "heartbeat_timeout": 12,
     "request_timeout": 3,
     "surveying_failure_threshold": 3,
-    "destruction_probability": 0.03,
-    "destruction_check_period": 5
+    "destruction_probability": 0.01,
+    "destruction_check_period": 5,
+    "max_alarm_forwards": 10
 }
