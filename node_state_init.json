@@ -9,5 +9,6 @@
     "heartbeat_counter": 0,
     "neighbor_last_heartbeat": {},
     "neighbor_states": {},
-    "surveying_targets": {}
+    "surveying_targets": {},
+    "seen_alarm_events": []
 }
