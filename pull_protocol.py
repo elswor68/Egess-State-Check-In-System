@@ -22,6 +22,8 @@
 # -------------------------------------------------------------------------
 
 
+import uuid
+
 import egess_api
 import random
 import copy
@@ -71,10 +73,12 @@ def request_state_from(neighbor_port, config_json, node_state, state_lock, this_
                 if not node_state["SURVEYING"]:
                     node_state["SURVEYING"] = True
                     node_state["NORMAL"] = False
+                    node_state["ALARMED"] = False
                     egess_api.write_state_change_data_point(this_port, node_state, "SURVEYING")
+                    event_id = str(uuid.uuid4())[:8]  # short unique ID
                     # Notify neighbors to enter ALARMED
                     for n in list(node_state["known_nodes"]):
-                        push_queue.put({"type": "alarmed_notification", "from": this_port})
+                        push_queue.put({"type": "alarmed_notification", "from": this_port, "forward_count": 0, "event_id": event_id})
                 if attempts >= config_json["surveying_failure_threshold"]:
                     print(f"WARNING: Node {neighbor_port} considered DESTROYED after {attempts} failed attempts")
                     node_state["neighbor_states"][neighbor_key] = {"DESTROYED": True}
@@ -93,10 +97,12 @@ def request_state_from(neighbor_port, config_json, node_state, state_lock, this_
             if not node_state["SURVEYING"]:
                 node_state["SURVEYING"] = True
                 node_state["NORMAL"] = False
+                node_state["ALARMED"] = False
                 egess_api.write_state_change_data_point(this_port, node_state, "SURVEYING")
+                event_id = str(uuid.uuid4())[:8]  # short unique ID
                 # Notify neighbors to enter ALARMED
                 for n in list(node_state["known_nodes"]):
-                    push_queue.put({"type": "alarmed_notification", "from": this_port})
+                    push_queue.put({"type": "alarmed_notification", "from": this_port, "forward_count": 0, "event_id": event_id})
 
             # Check if neighbor has exceeded the failure threshold
             if attempts >= config_json["surveying_failure_threshold"]:
@@ -112,17 +118,6 @@ def request_state_from(neighbor_port, config_json, node_state, state_lock, this_
                 for n in list(node_state["known_nodes"]):
                     push_queue.put({"type": "clear_alarmed", "from": this_port})
             state_lock.release()
-
-    state_lock.acquire()
-    known = list(node_state["known_nodes"])
-    last_seen = dict(node_state["neighbor_last_heartbeat"])
-    already_surveying = set(node_state["surveying_targets"].keys())
-    state_lock.release()
-
-    # Don't run pull protocol if this node is destroyed
-    with state_lock:
-        if node_state["DESTROYED"]:
-            return
 
 
 def pull_protocol(config_json, node_state, state_lock, this_port, number_of_nodes, push_queue):
