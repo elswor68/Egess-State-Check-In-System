@@ -2,6 +2,7 @@
     "version": 2,
     "base_host": "127.0.0.1",
     "base_port": 9000,
+    "max_port": 9048,
     "max_forwards": 5,
     "push_queue_maxsize": 5000,
     "pull_period": 5,
@@ -12,5 +13,10 @@
     "surveying_failure_threshold": 3,
     "destruction_probability": 0.01,
     "destruction_check_period": 5,
-    "max_alarm_forwards": 10
+    "max_alarm_forwards": 10,
+    "fire_spread_probability": 0.7,
+    "fire_spread_delay": 5,
+    "fire_ignition_probability": 0.005,
+    "tornado_wave_delay": 8,
+    "tornado_start_delay": 15
 }

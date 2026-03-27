@@ -21,12 +21,14 @@
 # -------------------------------------------------------------------------
 
 # LIBRARY IMPORTS
+from logging import root
 import sys  # To access command line arguments
 import json # To encode and decode JSON format
 from flask import Flask, request, jsonify # For sending and receiving messages
 import threading # For running push, background, listener, and pull threads
 import queue # For implementing the push queue
 import time # For sleep, to make sure that background is not too active
+import math
 
 
 # LOCAL IMPORTS
@@ -35,6 +37,31 @@ import background_protocol # Contains the background protocol of the node
 import listener_protocol # Contains the listener protocol of the node
 import pull_protocol # Contains the pull protocol of the node
 import destruction_protocol # Contains the destruction protocol of the node
+
+
+def _auto_grid_size(number_of_nodes):
+    root = int(math.isqrt(int(number_of_nodes)))
+    if root > 0 and root * root == int(number_of_nodes):
+        return int(root)
+    root = int(math.ceil(math.sqrt(float(number_of_nodes))))
+    if root < 2:
+        root = 2
+    return int(root)
+
+def _hex_neighbors_odd_r(col, row, grid):
+    if row % 2 == 0:
+        candidates = [
+            (col - 1, row), (col + 1, row),
+            (col, row - 1), (col - 1, row - 1),
+            (col, row + 1), (col - 1, row + 1),
+        ]
+    else:
+        candidates = [
+            (col - 1, row), (col + 1, row),
+            (col + 1, row - 1), (col, row - 1),
+            (col + 1, row + 1), (col, row + 1),
+        ]
+    return [(c, r) for c, r in candidates if 0 <= c < grid and 0 <= r < grid]
 
 
 def pull(config_json, node_state, state_lock, this_port, number_of_nodes, push_queue):
@@ -127,14 +154,22 @@ def destruction(config_json, node_state, state_lock, this_port):
     """
     destruction_protocol.destruction_protocol(config_json, node_state, state_lock, this_port)
 
+def fire_destruction(config_json, node_state, state_lock, this_port, push_queue):
+    import fire_destruction_protocol
+    fire_destruction_protocol.fire_destruction_protocol(config_json, node_state, state_lock, this_port, push_queue)
+
+def tornado_destruction(config_json, node_state, state_lock, this_port, push_queue):
+    import tornado_destruction_protocol
+    tornado_destruction_protocol.tornado_destruction_protocol(config_json, node_state, state_lock, this_port, push_queue)
 
 def main():
     # The program accepts exactly two argumens:
     # 1) port that the node will listen;
     # 2) the total number of nodes in the network.
-    if len(sys.argv) != 3:
+    if len(sys.argv) != 4:
         print("ERROR Two arguments expected.")
-        print("USAGE: {} <port> <number_of_nodes>".format(sys.argv[0]))
+        print("USAGE: {} <port> <number_of_nodes> <destruction_mode>".format(sys.argv[0]))
+        print("Modes: random, fire, tornado")
         exit(1)
     
     config_file = "config.json" # This file has the configuration that applies to all nodes.
@@ -142,6 +177,7 @@ def main():
 
     this_port = int(sys.argv[1]) # Read from the command line argument the port number to listen.
     number_of_nodes = int(sys.argv[2]) # Read from the command line the total number of nodes.
+    destruction_mode = sys.argv[3] # Read from the command line the destruction mode (e.g., random, fire, tornado). This will determine which destruction protocol to use.
 
     with open(config_file) as file: # Read all-nodes configuration file
         config_json = json.load(file) # Convert into JSON object. ATTENTION: this object is not for writing (for thread safety)
@@ -150,201 +186,16 @@ def main():
         node_state = json.load(file) # Convert into JSON object. ATTENTION: this object can only be used with a state lock
 
 
+    grid_size = _auto_grid_size(number_of_nodes)
+    node_index = this_port - config_json["base_port"]
+    this_col = node_index % grid_size
+    this_row = node_index // grid_size
+    for (nc, nr) in _hex_neighbors_odd_r(this_col, this_row, grid_size):
+        neighbor_port = config_json["base_port"] + nr * grid_size + nc
+        if neighbor_port != this_port:
+            node_state["known_nodes"].append(neighbor_port)
 
-# Create Grid Topology for 25 nodes
-    if this_port == 9000:
-        node_state["known_nodes"].append(9001)
-        node_state["known_nodes"].append(9010)
-        node_state["known_nodes"].append(9011)
 
-    if this_port == 9001:
-        node_state["known_nodes"].append(9000)
-        node_state["known_nodes"].append(9010)
-        node_state["known_nodes"].append(9011)
-        node_state["known_nodes"].append(9012)
-        node_state["known_nodes"].append(9002)
-
-    if this_port == 9002:
-        node_state["known_nodes"].append(9001)
-        node_state["known_nodes"].append(9011)
-        node_state["known_nodes"].append(9012)
-        node_state["known_nodes"].append(9013)
-        node_state["known_nodes"].append(9003)
-
-    if this_port == 9003:
-        node_state["known_nodes"].append(9002)
-        node_state["known_nodes"].append(9012)
-        node_state["known_nodes"].append(9013)
-        node_state["known_nodes"].append(9014)
-        node_state["known_nodes"].append(9004)
-
-    if this_port == 9004:
-        node_state["known_nodes"].append(9003)
-        node_state["known_nodes"].append(9013)
-        node_state["known_nodes"].append(9014)
-
-    if this_port == 9010:
-        node_state["known_nodes"].append(9000)
-        node_state["known_nodes"].append(9001)
-        node_state["known_nodes"].append(9011)
-        node_state["known_nodes"].append(9021)
-        node_state["known_nodes"].append(9020)
-
-    if this_port == 9011:
-        node_state["known_nodes"].append(9000)
-        node_state["known_nodes"].append(9001)
-        node_state["known_nodes"].append(9002)
-        node_state["known_nodes"].append(9012)
-        node_state["known_nodes"].append(9022)
-        node_state["known_nodes"].append(9021)
-        node_state["known_nodes"].append(9020)
-
-    if this_port == 9012:
-        node_state["known_nodes"].append(9001)
-        node_state["known_nodes"].append(9002)
-        node_state["known_nodes"].append(9003)
-        node_state["known_nodes"].append(9013)
-        node_state["known_nodes"].append(9023)
-        node_state["known_nodes"].append(9022)
-        node_state["known_nodes"].append(9021)
-        node_state["known_nodes"].append(9011)
-
-    if this_port == 9013:
-        node_state["known_nodes"].append(9002)
-        node_state["known_nodes"].append(9003)
-        node_state["known_nodes"].append(9004)
-        node_state["known_nodes"].append(9014)
-        node_state["known_nodes"].append(9024)
-        node_state["known_nodes"].append(9023)
-        node_state["known_nodes"].append(9022)
-        node_state["known_nodes"].append(9012)
-
-    if this_port == 9014:
-        node_state["known_nodes"].append(9003)
-        node_state["known_nodes"].append(9004)
-        node_state["known_nodes"].append(9013)
-        node_state["known_nodes"].append(9023)
-        node_state["known_nodes"].append(9024)
-
-    if this_port == 9020:
-        node_state["known_nodes"].append(9010)
-        node_state["known_nodes"].append(9011)
-        node_state["known_nodes"].append(9021)
-        node_state["known_nodes"].append(9031)
-        node_state["known_nodes"].append(9030)
-
-    if this_port == 9021:
-        node_state["known_nodes"].append(9010)
-        node_state["known_nodes"].append(9011)
-        node_state["known_nodes"].append(9012)
-        node_state["known_nodes"].append(9020)
-        node_state["known_nodes"].append(9022)
-        node_state["known_nodes"].append(9032)
-        node_state["known_nodes"].append(9031)
-        node_state["known_nodes"].append(9030)
-
-    if this_port == 9022:
-        node_state["known_nodes"].append(9011)
-        node_state["known_nodes"].append(9012)
-        node_state["known_nodes"].append(9013)
-        node_state["known_nodes"].append(9021)
-        node_state["known_nodes"].append(9023)
-        node_state["known_nodes"].append(9033)
-        node_state["known_nodes"].append(9031)
-        node_state["known_nodes"].append(9032)
-        node_state["known_nodes"].append(9033)
-
-    if this_port == 9023:
-        node_state["known_nodes"].append(9012)
-        node_state["known_nodes"].append(9013)
-        node_state["known_nodes"].append(9014)
-        node_state["known_nodes"].append(9022)
-        node_state["known_nodes"].append(9024)
-        node_state["known_nodes"].append(9034)
-        node_state["known_nodes"].append(9032)
-        node_state["known_nodes"].append(9033)
-        
-    if this_port == 9024:
-        node_state["known_nodes"].append(9013)
-        node_state["known_nodes"].append(9014)
-        node_state["known_nodes"].append(9023)
-        node_state["known_nodes"].append(9033)
-        node_state["known_nodes"].append(9034)
-
-    if this_port == 9030:
-        node_state["known_nodes"].append(9020)
-        node_state["known_nodes"].append(9021)
-        node_state["known_nodes"].append(9031)
-        node_state["known_nodes"].append(9041)
-        node_state["known_nodes"].append(9040)
-
-    if this_port == 9031:
-        node_state["known_nodes"].append(9020)
-        node_state["known_nodes"].append(9021)
-        node_state["known_nodes"].append(9022)
-        node_state["known_nodes"].append(9030)
-        node_state["known_nodes"].append(9032)
-        node_state["known_nodes"].append(9041)
-        node_state["known_nodes"].append(9040)
-        node_state["known_nodes"].append(9042)
-
-    if this_port == 9032:
-        node_state["known_nodes"].append(9021)
-        node_state["known_nodes"].append(9022)
-        node_state["known_nodes"].append(9023)
-        node_state["known_nodes"].append(9031)
-        node_state["known_nodes"].append(9033)
-        node_state["known_nodes"].append(9042)
-        node_state["known_nodes"].append(9041)
-        node_state["known_nodes"].append(9043)
-
-    if this_port == 9033:
-        node_state["known_nodes"].append(9022)
-        node_state["known_nodes"].append(9023)
-        node_state["known_nodes"].append(9024)
-        node_state["known_nodes"].append(9032)
-        node_state["known_nodes"].append(9034)
-        node_state["known_nodes"].append(9043)
-        node_state["known_nodes"].append(9044)
-        node_state["known_nodes"].append(9042)
-
-    if this_port == 9034:
-        node_state["known_nodes"].append(9023)
-        node_state["known_nodes"].append(9024)
-        node_state["known_nodes"].append(9033)
-        node_state["known_nodes"].append(9043)
-        node_state["known_nodes"].append(9044)
-
-    if this_port == 9040:
-        node_state["known_nodes"].append(9030)
-        node_state["known_nodes"].append(9031)
-        node_state["known_nodes"].append(9041)
-
-    if this_port == 9041:
-        node_state["known_nodes"].append(9030)
-        node_state["known_nodes"].append(9031)
-        node_state["known_nodes"].append(9032)
-        node_state["known_nodes"].append(9040)
-        node_state["known_nodes"].append(9042)
-
-    if this_port == 9042:
-        node_state["known_nodes"].append(9031)
-        node_state["known_nodes"].append(9032)
-        node_state["known_nodes"].append(9033)
-        node_state["known_nodes"].append(9041)
-        node_state["known_nodes"].append(9043)
-
-    if this_port == 9043:
-        node_state["known_nodes"].append(9032)
-        node_state["known_nodes"].append(9033)
-        node_state["known_nodes"].append(9034)
-        node_state["known_nodes"].append(9042)
-        node_state["known_nodes"].append(9044)
-
-    if this_port == 9044:
-        node_state["known_nodes"].append(9033)
-        node_state["known_nodes"].append(9034)
-        node_state["known_nodes"].append(9043)
 
     # Add a latency matrix to the initial state
     # Latency matrix represents latency in seconds between a pair of nodes
@@ -352,8 +203,8 @@ def main():
     # latency matrix can dynamically change to represent this.
     node_state["latency_matrix"] = []
 
-    matrix_size = 9044 - config_json["base_port"] + 1  # Always 45
-    for i in range(matrix_size):    
+    matrix_size = number_of_nodes
+    for i in range(matrix_size):
         row = [config_json["default_latency"]] * matrix_size
         node_state["latency_matrix"].append(row)
 
@@ -397,13 +248,18 @@ def main():
     # Start listener thread
     listener_thread.start()
 
-    # Create the destruction thread. The destruction thread checks if the node should be destroyed and updates the state accordingly.
-    destruction_thread = threading.Thread(target=destruction, args=(config_json, node_state, state_lock, this_port))
+    
+    if destruction_mode == "fire":
+        destruction_thread = threading.Thread(target=fire_destruction, args=(config_json, node_state, state_lock, this_port, push_queue))
+    elif destruction_mode == "tornado":
+        destruction_thread = threading.Thread(target=tornado_destruction, args=(config_json, node_state, state_lock, this_port, push_queue))
+    else:
+        destruction_thread = threading.Thread(target=destruction, args=(config_json, node_state, state_lock, this_port))
     destruction_thread.start()
 
-    # Create the pull thread. The pull thread contacts (polls) other nodes to get some information or updates from them.
+    # Create the pull thread. The pull thread contacts (polls) other nodes to get some information or updates from them.    
     pull_thread = threading.Thread(target=pull, args=(config_json, node_state, state_lock, this_port, number_of_nodes, push_queue))
-    pull_thread.start() # Start the pull thread.
+    pull_thread.start()
 
     # Join the threads in the opposite (LIFO) order
     pull_thread.join()
@@ -411,7 +267,6 @@ def main():
     destruction_thread.join()
     background_thread.join()
     push_thread.join()
-
 
 # This code prevents running the initialization code if this file is imported by another module
 # More information here: https://docs.python.org/3/library/__main__.html

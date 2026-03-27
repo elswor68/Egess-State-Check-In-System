@@ -78,7 +78,13 @@ def request_state_from(neighbor_port, config_json, node_state, state_lock, this_
                     event_id = str(uuid.uuid4())[:8]  # short unique ID
                     # Notify neighbors to enter ALARMED
                     for n in list(node_state["known_nodes"]):
-                        push_queue.put({"type": "alarmed_notification", "from": this_port, "forward_count": 0, "event_id": event_id})
+                        push_queue.put({
+                                "type": "alarmed_notification", 
+                                "from": this_port,
+                                "forward_count": 0, 
+                                "event_id": event_id,
+                                "origin_time": time.time()
+                            })
                 if attempts >= config_json["surveying_failure_threshold"]:
                     print(f"WARNING: Node {neighbor_port} considered DESTROYED after {attempts} failed attempts")
                     node_state["neighbor_states"][neighbor_key] = {"DESTROYED": True}
@@ -102,7 +108,13 @@ def request_state_from(neighbor_port, config_json, node_state, state_lock, this_
                 event_id = str(uuid.uuid4())[:8]  # short unique ID
                 # Notify neighbors to enter ALARMED
                 for n in list(node_state["known_nodes"]):
-                    push_queue.put({"type": "alarmed_notification", "from": this_port, "forward_count": 0, "event_id": event_id})
+                    push_queue.put({
+                        "type": "alarmed_notification", 
+                        "from": this_port, 
+                        "forward_count": 0, 
+                        "event_id": event_id,
+                        "origin_time": time.time()
+                    })
 
             # Check if neighbor has exceeded the failure threshold
             if attempts >= config_json["surveying_failure_threshold"]:

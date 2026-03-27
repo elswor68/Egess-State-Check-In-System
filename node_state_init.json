@@ -10,5 +10,7 @@
     "neighbor_last_heartbeat": {},
     "neighbor_states": {},
     "surveying_targets": {},
-    "seen_alarm_events": []
+    "seen_alarm_events": [],
+    "ON_FIRE": false,
+    "fire_arrival_time": null
 }

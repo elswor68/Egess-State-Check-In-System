@@ -10,6 +10,9 @@
 # Kill all running nodes
 pkill -f node.py
 
+echo "Select destruction mode: random, fire, tornado"
+read -p "Mode: " DESTRUCTION_MODE
+
 # Backup the data from the previous (most recent) run in the backupdata folder
 mkdir -p backupdata
 mv data.csv backupdata/data-`date +%s`.csv
@@ -18,17 +21,23 @@ touch data.csv
 # Erase the log from the most recent run
 echo "" > run.log
 
+# Validate input
+if [[ "$DESTRUCTION_MODE" != "random" && "$DESTRUCTION_MODE" != "fire" && "$DESTRUCTION_MODE" != "tornado" ]]; then
+    echo "Invalid mode. Defaulting to random."
+    DESTRUCTION_MODE="random"
+fi
+
 # Number of nodes
-N=25
+N=49
 
 # We start counting ports from 9000
 PORT=9000
 
 # Iterate from 1 (inclusive) until N (inclusive)
-for row in 0 1 2 3 4; do
-    for col in 0 1 2 3 4; do
-        PORT=$((9000 + row * 10 + col))
-        python3 -u node.py $PORT $N >> run.log 2>&1 &
+for row in 0 1 2 3 4 5 6; do
+    for col in 0 1 2 3 4 5 6; do
+        PORT=$((9000 + row * 7 + col))
+        python3 -u node.py $PORT $N $DESTRUCTION_MODE>> run.log 2>&1 &
         sleep 0.1
     done
 done

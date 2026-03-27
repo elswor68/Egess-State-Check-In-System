@@ -67,7 +67,8 @@ def listener_protocol(config_json, node_state, state_lock, this_port, number_of_
                         "type": "alarm_wave",
                         "from": this_port,
                         "forward_count": forward_count,
-                        "event_id": event_id
+                        "event_id": event_id,
+                        "origin_time": msg.get("origin_time", 0)
                     })
         return jsonify({"status": "ok"}), 200
     
@@ -78,15 +79,21 @@ def listener_protocol(config_json, node_state, state_lock, this_port, number_of_
             if not node_state["DESTROYED"] and not already_seen:
                 node_state["seen_alarm_events"].append(event_id)
                 forward_count = msg.get("forward_count", 0) + 1
-                egess_api.write_data_point(this_port, "alarm_wave_received", "{};from={}".format(event_id, str(msg.get("from", "unknown"))))
-                if forward_count < config_json["max_alarm_forwards"]:
-                    push_queue.put({
-                        "type": "alarm_wave",
-                        "from": this_port,
-                        "forward_count": forward_count,
-                        "event_id": event_id
-                    })
+                origin_time = msg.get("origin_time", 0)
+                if not node_state["ALARMED"] and not node_state["SURVEYING"]:
+                    delta = round(time.time() - origin_time, 4) if origin_time else -1
+                    egess_api.write_data_point(this_port, "alarm_wave_received", f"{event_id}:delta={delta}s")
+                    egess_api.write_data_point(this_port, "alarm_wave_received", "{};from={}".format(event_id, str(msg.get("from", "unknown"))))
+                    if forward_count < config_json["max_alarm_forwards"]:
+                        push_queue.put({
+                            "type": "alarm_wave",
+                            "from": this_port,
+                            "forward_count": forward_count,
+                            "event_id": event_id,
+                            "origin_time": origin_time
+                        })
         return jsonify({"status": "ok"}), 200
+
 
     if msg.get("type") == "clear_alarmed":
         with state_lock:
@@ -95,6 +102,16 @@ def listener_protocol(config_json, node_state, state_lock, this_port, number_of_
                 node_state["NORMAL"] = True
                 egess_api.write_state_change_data_point(this_port, node_state, "ALARMED")
         return jsonify({"status": "ok"}), 200
+
+
+    if msg.get("type") == "fire_spread":
+        with state_lock:
+            if not node_state["DESTROYED"] and not node_state["ON_FIRE"]:
+                node_state["ON_FIRE"] = True
+                node_state["fire_arrival_time"] = time.time()
+                egess_api.write_data_point(this_port, "fire_spread_received", str(msg.get("from", "unknown")))
+        return jsonify({"status": "ok"}), 200
+
 
     if msg.get("type") == "state_request":
         state_lock.acquire()
