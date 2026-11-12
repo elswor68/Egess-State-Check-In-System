@@ -1,5 +1,5 @@
 # EGESS
-Experimental Gear for Evaluation of Swarm Systems
+Experimental Gear for Evaluation of Swarm Systems (Check-In Model for SilenceSniffer)
 
 ## Comments
 Since this is a schientific tool with a lot of intricacies intended to be widely disseminated and replicated, it uses the *comment-everything* style. Each time you change something, you must also update all comments that may be affected by the change.
